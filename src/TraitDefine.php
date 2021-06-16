@@ -5,7 +5,7 @@ namespace WilokeJWTSDK;
 
 
 trait TraitDefine {
-	private static ?WilokeJWTSDK $oSelf;
+	private static ?WilokeJWTSDK $oSelf        = null;
 	private string               $namespace    = 'wiloke-jwt';
 	private array                $aDefaultAPI
 	                                           = [

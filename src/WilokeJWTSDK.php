@@ -13,8 +13,8 @@ class WilokeJWTSDK {
 	 *
 	 * @return WilokeJWTSDK|null
 	 */
-	public static function setup( array $aAPI, string $version = 'v1' ): ?WilokeJWTSDK {
-		if ( ! self::$oSelf ) {
+	public static function setup( array $aAPI, string $version = 'v1' ): WilokeJWTSDK {
+		if ( self::$oSelf === null ) {
 			self::$oSelf = new self();
 		}
 
@@ -76,11 +76,11 @@ class WilokeJWTSDK {
 		return json_decode( wp_remote_retrieve_body( $response ), true );
 	}
 
-	public function renewToken( string $accessToken ) {
+	public function renewToken( string $refreshToken ) {
 		$response = wp_remote_post(
 			$this->generateEndpoint( 'renew-token' ),
 			[
-				'body' => array_merge( $this->aAPI, [ 'accessToken' => $accessToken ] )
+				'body' => array_merge( $this->aAPI, [ 'refreshToken' => $refreshToken ] )
 			]
 		);
 
