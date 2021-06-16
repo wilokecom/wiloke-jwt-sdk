@@ -60,6 +60,7 @@ class WilokeJWTSDK {
 		if ( empty( $response ) || is_wp_error( $response ) ) {
 			return [
 				'status'  => 'error',
+				'code'    => 400,
 				'message' => 'Something went error'
 			];
 		}
@@ -71,9 +72,9 @@ class WilokeJWTSDK {
 	 * @param string $code Tra lai tu api requestAuthCode
 	 * @param string $email
 	 *
-	 * @return mixed|string[]
+	 * @return string[]
 	 */
-	public function signUp( string $code, string $email ) {
+	public function signUp( string $code, string $email ): array {
 		$response = wp_remote_post(
 			$this->generateEndpoint( 'sign-up' ),
 			[
@@ -84,6 +85,7 @@ class WilokeJWTSDK {
 		if ( empty( $response ) || is_wp_error( $response ) ) {
 			return [
 				'status'  => 'error',
+				'code'    => 400,
 				'message' => 'Something went error'
 			];
 		}
@@ -93,6 +95,7 @@ class WilokeJWTSDK {
 		if ( ! is_array( $aResponse ) ) {
 			return [
 				'status'  => 'error',
+				'code'    => 400,
 				'message' => 'We could not parse signUp response json'
 			];
 		}
@@ -111,6 +114,26 @@ class WilokeJWTSDK {
 		if ( ! $aResponse = $this->getBody( $response ) ) {
 			return [
 				'status'  => 'error',
+				'code'    => 400,
+				'message' => 'Something went error'
+			];
+		}
+
+		return $aResponse;
+	}
+
+	public function validateToken( ?string $accessToken ): array {
+		$response = wp_remote_post(
+			$this->generateEndpoint( 'token-validation' ),
+			[
+				'body' => array_merge( $this->aAPI, [ 'accessToken' => $accessToken ] )
+			]
+		);
+
+		if ( ! $aResponse = $this->getBody( $response ) ) {
+			return [
+				'status'  => 'error',
+				'code'    => 400,
 				'message' => 'Something went error'
 			];
 		}
