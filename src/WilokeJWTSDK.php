@@ -13,8 +13,8 @@ class WilokeJWTSDK {
 	 *
 	 * @return WilokeJWTSDK|null
 	 */
-	public static function setup( array $aAPI, string $version = 'v1' ): WilokeJWTSDK {
-		if ( self::$oSelf === null ) {
+	public static function setup( array $aAPI, string $version = 'v1' ): ?WilokeJWTSDK {
+		if ( ! self::$oSelf ) {
 			self::$oSelf = new self();
 		}
 
@@ -24,7 +24,7 @@ class WilokeJWTSDK {
 	}
 
 	private function performSetup( array $aAPI, string $version ): WilokeJWTSDK {
-		$this->aAPI    = wp_parse_args( $this->aDefaultAPI, $aAPI );
+		$this->aAPI    = wp_parse_args( $aAPI, $this->aDefaultAPI );
 		$this->version = $version;
 
 		return $this;
@@ -32,6 +32,21 @@ class WilokeJWTSDK {
 
 	private function generateEndpoint( string $namespace ): string {
 		return $this->rootEndpoint . $this->ds . $this->version . $this->ds . $namespace;
+	}
+
+	private function getBody( $response ): array {
+		$body = wp_remote_retrieve_body( $response );
+		if ( empty( $body ) ) {
+			return [];
+		}
+
+
+		$aResponse = json_decode( $body, true );
+		if ( empty( $aResponse ) ) {
+			$aResponse = json_decode( stripslashes( $body ), true );
+		}
+
+		return $aResponse;
 	}
 
 	public function requestAuthCode(): array {
@@ -44,12 +59,12 @@ class WilokeJWTSDK {
 
 		if ( empty( $response ) || is_wp_error( $response ) ) {
 			return [
-				'status' => 'error',
-				'msg'    => 'Something went error'
+				'status'  => 'error',
+				'message' => 'Something went error'
 			];
 		}
 
-		return json_decode( wp_remote_retrieve_body( $response ), true );
+		return $this->getBody( $response );
 	}
 
 	/**
@@ -68,29 +83,38 @@ class WilokeJWTSDK {
 
 		if ( empty( $response ) || is_wp_error( $response ) ) {
 			return [
-				'status' => 'error',
-				'msg'    => 'Something went error'
+				'status'  => 'error',
+				'message' => 'Something went error'
 			];
 		}
 
-		return json_decode( wp_remote_retrieve_body( $response ), true );
+
+		$aResponse = $this->getBody( $response );
+		if ( ! is_array( $aResponse ) ) {
+			return [
+				'status'  => 'error',
+				'message' => 'We could not parse signUp response json'
+			];
+		}
+
+		return $aResponse;
 	}
 
-	public function renewToken( string $refreshToken ) {
+	public function renewToken( string $accessToken, string $refreshToken ): array {
 		$response = wp_remote_post(
 			$this->generateEndpoint( 'renew-token' ),
 			[
-				'body' => array_merge( $this->aAPI, [ 'refreshToken' => $refreshToken ] )
+				'body' => array_merge( $this->aAPI, [ 'accessToken' => $accessToken, 'refreshToken' => $refreshToken ] )
 			]
 		);
 
-		if ( empty( $response ) || is_wp_error( $response ) ) {
+		if ( ! $aResponse = $this->getBody( $response ) ) {
 			return [
-				'status' => 'error',
-				'msg'    => 'Something went error'
+				'status'  => 'error',
+				'message' => 'Something went error'
 			];
 		}
 
-		return json_decode( wp_remote_retrieve_body( $response ), true );
+		return $aResponse;
 	}
 }
